@@ -62,6 +62,13 @@ class IClientBase
     virtual bool     voicePlayPeek(size_t /*index*/, uint32_t &from, uint32_t &message_id,
                                    uint32_t &approx_duration_ms) const
     { from = 0; message_id = 0; approx_duration_ms = 0; return false; }
+    // Extended peek: also exposes `to`, channel, and whether the message has
+    // already been played at least once. Used by the chat-screen widget to
+    // route each bubble into the right chat container and dim played entries.
+    virtual bool     voicePlayPeekFull(size_t /*index*/, uint32_t &from, uint32_t &to,
+                                       uint8_t &channel, uint32_t &message_id,
+                                       uint32_t &approx_duration_ms, bool &played) const
+    { from = 0; to = 0; channel = 0; message_id = 0; approx_duration_ms = 0; played = false; return false; }
 
     virtual void task_handler(void){};
     virtual void setNotifyCallback(NotifyCallback notifyConnectionStatus) = 0;
