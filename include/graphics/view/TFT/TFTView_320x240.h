@@ -220,6 +220,20 @@ class TFTView_320x240 : public MeshtasticView
     // Returns true if the current message_input_area ENTER press should send a
     // voice message instead of text (i.e. there's audio armed and ready).
     bool consumeVoiceSendIfArmed(void);
+
+    // Mini-player widget for received voice messages (Phase 7c). Lives on
+    // lv_layer_top(); visible only when there's something to play or playback
+    // is in progress. Driven by an lv_timer polling the IClientBase voicePlay*
+    // accessors every 250 ms.
+    lv_obj_t   *vt_player_panel = nullptr;
+    lv_obj_t   *vt_player_btn = nullptr;
+    lv_obj_t   *vt_player_btn_label = nullptr;
+    lv_obj_t   *vt_player_info_label = nullptr;
+    lv_timer_t *vt_player_timer = nullptr;
+    void buildVoicePlayerWidget(void);
+    void updateVoicePlayerWidget(void);
+    static void vtPlayerBtnClickedCb(lv_event_t *e);
+    static void vtPlayerTimerCb(lv_timer_t *t);
     void ui_set_active(lv_obj_t *b, lv_obj_t *p, lv_obj_t *tp);
     void showKeyboard(lv_obj_t *textArea);
     void hideKeyboard(lv_obj_t *panel);

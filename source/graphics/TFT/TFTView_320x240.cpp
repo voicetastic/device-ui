@@ -177,14 +177,15 @@ void TFTView_320x240::init(IClientBase *client)
         if (k == SpecialKey::VoiceToggle) {
             this->handleVoiceToggle();
         } else if (k == SpecialKey::VoicePlayNext) {
-            // Temporary "play oldest queued voice message" hotkey, replaced by
-            // the chat-screen mini-player widget once it lands.
+            // Kept as a parallel hotkey to the on-screen mini-player widget.
             IClientBase *client = controller ? controller->getClient() : nullptr;
             if (client && client->voicePlayPendingCount() > 0) {
                 client->voicePlayNext();
             }
         }
     });
+
+    buildVoicePlayerWidget();
 
     ui_init_boot();
     FileLoader::init(&fileSystem);
@@ -1761,6 +1762,106 @@ bool TFTView_320x240::consumeVoiceSendIfArmed(void)
     if (!client) return false;
     if (client->voiceRecordState() != IClientBase::eVoiceArmed) return false;
     return client->voiceRecordSend();
+}
+
+// ---------- Voicetastic mini-player widget (Phase 7c) ----------
+
+void TFTView_320x240::buildVoicePlayerWidget(void)
+{
+    // Float the player over the top of every screen via lv_layer_top() — the
+    // alternative is to bolt it to the messages_panel layout, which the
+    // generated UI controls. Doing it on the top layer keeps the chat layout
+    // untouched. Visibility is driven by the timer below.
+    lv_obj_t *top = lv_layer_top();
+    vt_player_panel = lv_obj_create(top);
+    lv_obj_set_size(vt_player_panel, 240, 28);
+    lv_obj_align(vt_player_panel, LV_ALIGN_TOP_MID, 0, 32);
+    lv_obj_set_style_bg_color(vt_player_panel, lv_color_hex(0x224488), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(vt_player_panel, LV_OPA_90, LV_PART_MAIN);
+    lv_obj_set_style_radius(vt_player_panel, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(vt_player_panel, 2, LV_PART_MAIN);
+    lv_obj_set_style_border_width(vt_player_panel, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(vt_player_panel, lv_color_hex(0x88AAEE), LV_PART_MAIN);
+    lv_obj_clear_flag(vt_player_panel, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
+
+    vt_player_btn = lv_btn_create(vt_player_panel);
+    lv_obj_set_size(vt_player_btn, 32, 22);
+    lv_obj_align(vt_player_btn, LV_ALIGN_LEFT_MID, 0, 0);
+    lv_obj_add_event_cb(vt_player_btn, vtPlayerBtnClickedCb, LV_EVENT_CLICKED, this);
+    vt_player_btn_label = lv_label_create(vt_player_btn);
+    lv_label_set_text(vt_player_btn_label, LV_SYMBOL_PLAY);
+    lv_obj_center(vt_player_btn_label);
+
+    vt_player_info_label = lv_label_create(vt_player_panel);
+    lv_label_set_text(vt_player_info_label, "");
+    lv_obj_set_style_text_color(vt_player_info_label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_align(vt_player_info_label, LV_ALIGN_LEFT_MID, 38, 0);
+
+    vt_player_timer = lv_timer_create(vtPlayerTimerCb, 250, this);
+}
+
+void TFTView_320x240::vtPlayerTimerCb(lv_timer_t *t)
+{
+    TFTView_320x240 *self = (TFTView_320x240 *)lv_timer_get_user_data(t);
+    if (self) self->updateVoicePlayerWidget();
+}
+
+void TFTView_320x240::updateVoicePlayerWidget(void)
+{
+    if (!vt_player_panel) return;
+    IClientBase *client = controller ? controller->getClient() : nullptr;
+    if (!client) {
+        lv_obj_add_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+    const bool   playing  = client->voicePlayIsPlaying();
+    const size_t pending  = client->voicePlayPendingCount();
+
+    if (!playing && pending == 0) {
+        lv_obj_add_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+    lv_obj_clear_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
+
+    char buf[80];
+    if (playing) {
+        lv_label_set_text(vt_player_btn_label, LV_SYMBOL_STOP);
+        const uint32_t elapsed = client->voicePlayElapsedMs();
+        const uint32_t total   = client->voicePlayTotalMs();
+        const uint32_t from    = client->voicePlayFromNode();
+        snprintf(buf, sizeof(buf), "!%08x  %u.%us / %u.%us",
+                 (unsigned)from,
+                 (unsigned)(elapsed / 1000), (unsigned)((elapsed / 100) % 10),
+                 (unsigned)(total   / 1000), (unsigned)((total   / 100) % 10));
+    } else {
+        lv_label_set_text(vt_player_btn_label, LV_SYMBOL_PLAY);
+        uint32_t from = 0, mid = 0, dur = 0;
+        client->voicePlayPeek(0, from, mid, dur);
+        if (pending > 1) {
+            snprintf(buf, sizeof(buf), "%u msgs - !%08x  %u.%us",
+                     (unsigned)pending, (unsigned)from,
+                     (unsigned)(dur / 1000), (unsigned)((dur / 100) % 10));
+        } else {
+            snprintf(buf, sizeof(buf), "voice from !%08x  %u.%us",
+                     (unsigned)from,
+                     (unsigned)(dur / 1000), (unsigned)((dur / 100) % 10));
+        }
+    }
+    lv_label_set_text(vt_player_info_label, buf);
+}
+
+void TFTView_320x240::vtPlayerBtnClickedCb(lv_event_t *e)
+{
+    TFTView_320x240 *self = (TFTView_320x240 *)lv_event_get_user_data(e);
+    if (!self) return;
+    IClientBase *client = self->controller ? self->controller->getClient() : nullptr;
+    if (!client) return;
+    if (client->voicePlayIsPlaying()) {
+        client->voicePlayStop();
+    } else if (client->voicePlayPendingCount() > 0) {
+        client->voicePlayNext();
+    }
 }
 
 // basic settings buttons
