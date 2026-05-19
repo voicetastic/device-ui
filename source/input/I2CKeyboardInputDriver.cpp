@@ -110,23 +110,24 @@ void TDeckKeyboardInputDriver::readKeyboard(uint8_t address, lv_indev_t *indev, 
             prevTDeckKey = keyValue;
             return;
         }
-        if (keyValue == (char)0xE9) {
-            // SYM+9 chord (guessed). Temporary "play next received voice"
-            // hotkey while the chat-screen mini-player widget is being built.
+        if (keyValue == (char)0xE4) {
+            // SYM+$ chord (= SHIFT+4, $ being the symbol-layer label on the
+            // '4' key). Temporary "play next received voice" hotkey while the
+            // chat-screen mini-player widget is being built.
             data->state = LV_INDEV_STATE_RELEASED;
             data->key = 0;
-            if (prevTDeckKey != (char)0xE9) {
+            if (prevTDeckKey != (char)0xE4) {
                 fireSpecialKey(SpecialKey::VoicePlayNext);
             }
             prevTDeckKey = keyValue;
             return;
         }
         // Diagnostic: log any unhandled high-bit byte so we can identify what
-        // SYM+other-digit produces if 0xE9 turns out to be wrong.
+        // SYM+other-digit produces if 0xE4 turns out to be wrong.
         if ((uint8_t)keyValue >= 0xE0 && (uint8_t)keyValue <= 0xFE) {
             ILOG_DEBUG("TDeckKb: unmapped shift/sym byte 0x%02x", (uint8_t)keyValue);
         }
-        prevTDeckKey = keyValue; // reset edge state for next 0xE0 / 0xE9
+        prevTDeckKey = keyValue; // reset edge state for next 0xE0 / 0xE4
         // ignore empty reads
         if (keyValue != (char)0x00) {
             data->state = LV_INDEV_STATE_PRESSED;
