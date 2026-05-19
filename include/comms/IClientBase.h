@@ -46,6 +46,21 @@ class IClientBase
     virtual VoiceState voiceRecordState() const { return eVoiceIdle; }
     virtual uint32_t voiceRecordElapsedMs() const { return 0; }
 
+    // Mini-player playback hooks. Received voice messages queue up in the
+    // firmware; the chat-screen widget enumerates and plays them on user
+    // request. All return harmless defaults if no voice backend is present.
+    virtual size_t   voicePlayPendingCount() const { return 0; }
+    virtual bool     voicePlayNext() { return false; }
+    virtual void     voicePlayStop() {}
+    virtual bool     voicePlayIsPlaying() const { return false; }
+    virtual uint32_t voicePlayElapsedMs() const { return 0; }
+    virtual uint32_t voicePlayTotalMs() const { return 0; }
+    virtual uint32_t voicePlayFromNode() const { return 0; }
+    // Inspect a queued message without consuming it. Returns false past end.
+    virtual bool     voicePlayPeek(size_t /*index*/, uint32_t &from, uint32_t &message_id,
+                                   uint32_t &approx_duration_ms) const
+    { from = 0; message_id = 0; approx_duration_ms = 0; return false; }
+
     virtual void task_handler(void){};
     virtual void setNotifyCallback(NotifyCallback notifyConnectionStatus) = 0;
 
