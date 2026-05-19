@@ -12,7 +12,7 @@
 // as the Latin-1 'à' into focused textareas), and fires this callback instead.
 enum class SpecialKey : uint8_t {
     VoiceToggle    = 0,  // SYM+0  (T-Deck microphone key)
-    VoicePlayNext  = 1,  // SYM+$  (temporary, until the chat-screen mini-player widget lands)
+    VoicePlayNext  = 1,  // SYM+space  (temporary, until the chat-screen mini-player widget lands)
 };
 using SpecialKeyCallback = std::function<void(SpecialKey)>;
 void registerSpecialKeyCallback(SpecialKeyCallback cb);
