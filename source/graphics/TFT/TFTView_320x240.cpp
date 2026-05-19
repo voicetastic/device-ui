@@ -185,7 +185,7 @@ void TFTView_320x240::init(IClientBase *client)
         }
     });
 
-    buildVoicePlayerWidget();
+    buildVoicePlayerTimer();
 
     ui_init_boot();
     FileLoader::init(&fileSystem);
@@ -1764,91 +1764,127 @@ bool TFTView_320x240::consumeVoiceSendIfArmed(void)
     return client->voiceRecordSend();
 }
 
-// ---------- Voicetastic mini-player widget (Phase 7c) ----------
+// ---------- Voicetastic chat-bubble mini-player (Phase 7c) ----------
 
-void TFTView_320x240::buildVoicePlayerWidget(void)
+void TFTView_320x240::buildVoicePlayerTimer(void)
 {
-    // Float the player over the top of every screen via lv_layer_top() — the
-    // alternative is to bolt it to the messages_panel layout, which the
-    // generated UI controls. Doing it on the top layer keeps the chat layout
-    // untouched. Visibility is driven by the timer below.
-    lv_obj_t *top = lv_layer_top();
-    vt_player_panel = lv_obj_create(top);
-    lv_obj_set_size(vt_player_panel, 240, 28);
-    lv_obj_align(vt_player_panel, LV_ALIGN_TOP_MID, 0, 32);
-    lv_obj_set_style_bg_color(vt_player_panel, lv_color_hex(0x224488), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(vt_player_panel, LV_OPA_90, LV_PART_MAIN);
-    lv_obj_set_style_radius(vt_player_panel, 6, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(vt_player_panel, 2, LV_PART_MAIN);
-    lv_obj_set_style_border_width(vt_player_panel, 1, LV_PART_MAIN);
-    lv_obj_set_style_border_color(vt_player_panel, lv_color_hex(0x88AAEE), LV_PART_MAIN);
-    lv_obj_clear_flag(vt_player_panel, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
-
-    vt_player_btn = lv_btn_create(vt_player_panel);
-    lv_obj_set_size(vt_player_btn, 32, 22);
-    lv_obj_align(vt_player_btn, LV_ALIGN_LEFT_MID, 0, 0);
-    lv_obj_add_event_cb(vt_player_btn, vtPlayerBtnClickedCb, LV_EVENT_CLICKED, this);
-    vt_player_btn_label = lv_label_create(vt_player_btn);
-    lv_label_set_text(vt_player_btn_label, LV_SYMBOL_PLAY);
-    lv_obj_center(vt_player_btn_label);
-
-    vt_player_info_label = lv_label_create(vt_player_panel);
-    lv_label_set_text(vt_player_info_label, "");
-    lv_obj_set_style_text_color(vt_player_info_label, lv_color_white(), LV_PART_MAIN);
-    lv_obj_align(vt_player_info_label, LV_ALIGN_LEFT_MID, 38, 0);
-
+    // 250 ms is fast enough that the elapsed-time counter on a playing bubble
+    // looks live, slow enough that the firmware peek calls are cheap.
     vt_player_timer = lv_timer_create(vtPlayerTimerCb, 250, this);
 }
 
 void TFTView_320x240::vtPlayerTimerCb(lv_timer_t *t)
 {
     TFTView_320x240 *self = (TFTView_320x240 *)lv_timer_get_user_data(t);
-    if (self) self->updateVoicePlayerWidget();
+    if (self) self->updateVoiceBubbles();
 }
 
-void TFTView_320x240::updateVoicePlayerWidget(void)
+void TFTView_320x240::addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_t message_id,
+                                     uint32_t approx_duration_ms)
 {
-    if (!vt_player_panel) return;
+    if (!container) return;
+    // Build the bubble container with the same panel + padding style the text
+    // bubbles use (see addMessage() for the text path), so it visually
+    // matches the rest of the conversation.
+    lv_obj_t *bubble = lv_obj_create(container);
+    lv_obj_set_width(bubble, lv_pct(100));
+    lv_obj_set_height(bubble, LV_SIZE_CONTENT);
+    lv_obj_set_align(bubble, LV_ALIGN_CENTER);
+    lv_obj_clear_flag(bubble, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(bubble, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    add_style_panel_style(bubble);
+    lv_obj_set_style_border_width(bubble, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(bubble, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_right(bubble, 0, LV_PART_MAIN);
+    lv_obj_set_style_pad_top(bubble, 2, LV_PART_MAIN);
+    lv_obj_set_style_pad_bottom(bubble, 2, LV_PART_MAIN);
+
+    lv_obj_t *inner = lv_obj_create(bubble);
+    lv_obj_set_width(inner, 200);
+    lv_obj_set_height(inner, 28);
+    lv_obj_set_align(inner, LV_ALIGN_RIGHT_MID);
+    lv_obj_clear_flag(inner, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(inner, 6, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(inner, lv_color_hex(0x224488), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(inner, LV_OPA_90, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(inner, 2, LV_PART_MAIN);
+    lv_obj_set_style_border_width(inner, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(inner, lv_color_hex(0x88AAEE), LV_PART_MAIN);
+
+    lv_obj_t *btn = lv_btn_create(inner);
+    lv_obj_set_size(btn, 30, 22);
+    lv_obj_align(btn, LV_ALIGN_LEFT_MID, 0, 0);
+    // Stash the message_id on the button so the click handler knows which
+    // bubble fired it; we cast through uintptr_t to silence warnings.
+    btn->user_data = (void *)(uintptr_t)message_id;
+    lv_obj_add_event_cb(btn, vtPlayerBtnClickedCb, LV_EVENT_CLICKED, this);
+
+    lv_obj_t *btn_label = lv_label_create(btn);
+    lv_label_set_text(btn_label, LV_SYMBOL_PLAY);
+    lv_obj_center(btn_label);
+
+    lv_obj_t *info = lv_label_create(inner);
+    lv_obj_set_style_text_color(info, lv_color_white(), LV_PART_MAIN);
+    lv_obj_align(info, LV_ALIGN_LEFT_MID, 36, 0);
+    char buf[48];
+    snprintf(buf, sizeof(buf), "!%08x   %u.%us",
+             (unsigned)from,
+             (unsigned)(approx_duration_ms / 1000), (unsigned)((approx_duration_ms / 100) % 10));
+    lv_label_set_text(info, buf);
+
+    voice_bubbles[message_id] = VoiceBubbleRefs{bubble, btn_label, info};
+    lv_obj_scroll_to_view(bubble, LV_ANIM_ON);
+}
+
+void TFTView_320x240::updateVoiceBubbles(void)
+{
     IClientBase *client = controller ? controller->getClient() : nullptr;
-    if (!client) {
-        lv_obj_add_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
-        return;
-    }
-    const bool   playing  = client->voicePlayIsPlaying();
-    const size_t pending  = client->voicePlayPendingCount();
+    if (!client) return;
 
-    if (!playing && pending == 0) {
-        lv_obj_add_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
-        return;
-    }
-    lv_obj_clear_flag(vt_player_panel, LV_OBJ_FLAG_HIDDEN);
-
-    char buf[80];
-    if (playing) {
-        lv_label_set_text(vt_player_btn_label, LV_SYMBOL_STOP);
-        const uint32_t elapsed = client->voicePlayElapsedMs();
-        const uint32_t total   = client->voicePlayTotalMs();
-        const uint32_t from    = client->voicePlayFromNode();
-        snprintf(buf, sizeof(buf), "!%08x  %u.%us / %u.%us",
-                 (unsigned)from,
-                 (unsigned)(elapsed / 1000), (unsigned)((elapsed / 100) % 10),
-                 (unsigned)(total   / 1000), (unsigned)((total   / 100) % 10));
-    } else {
-        lv_label_set_text(vt_player_btn_label, LV_SYMBOL_PLAY);
+    // (1) Discover new arrivals: peek every queued message_id; create a bubble
+    // for the ones we haven't seen yet. Bubbles land in activeMsgContainer
+    // (the conversation the user is currently looking at); a future revision
+    // could route by sender + channel.
+    const size_t pending = client->voicePlayPendingCount();
+    for (size_t i = 0; i < pending; i++) {
         uint32_t from = 0, mid = 0, dur = 0;
-        client->voicePlayPeek(0, from, mid, dur);
-        if (pending > 1) {
-            snprintf(buf, sizeof(buf), "%u msgs - !%08x  %u.%us",
-                     (unsigned)pending, (unsigned)from,
-                     (unsigned)(dur / 1000), (unsigned)((dur / 100) % 10));
+        if (!client->voicePlayPeek(i, from, mid, dur)) break;
+        if (voice_bubbles.find(mid) != voice_bubbles.end()) continue;
+        if (!activeMsgContainer) continue;
+        addVoiceBubble(activeMsgContainer, from, mid, dur);
+    }
+
+    // (2) Also catch the message currently being played -- it leaves the
+    // pending queue at startPlayback time, so peek won't see it any more.
+    const uint32_t playing_mid = client->voicePlayMessageId();
+    if (playing_mid != 0 && voice_bubbles.find(playing_mid) == voice_bubbles.end() &&
+        activeMsgContainer) {
+        addVoiceBubble(activeMsgContainer, client->voicePlayFromNode(),
+                       playing_mid, client->voicePlayTotalMs());
+    }
+
+    // (3) Refresh state on every known bubble.
+    const bool playing = client->voicePlayIsPlaying();
+    for (auto &kv : voice_bubbles) {
+        const uint32_t mid = kv.first;
+        VoiceBubbleRefs &refs = kv.second;
+        if (!refs.btn_label || !refs.info_label) continue;
+        if (playing && mid == playing_mid) {
+            lv_label_set_text(refs.btn_label, LV_SYMBOL_STOP);
+            const uint32_t elapsed = client->voicePlayElapsedMs();
+            const uint32_t total   = client->voicePlayTotalMs();
+            char buf[48];
+            snprintf(buf, sizeof(buf), "!%08x   %u.%us / %u.%us",
+                     (unsigned)client->voicePlayFromNode(),
+                     (unsigned)(elapsed / 1000), (unsigned)((elapsed / 100) % 10),
+                     (unsigned)(total   / 1000), (unsigned)((total   / 100) % 10));
+            lv_label_set_text(refs.info_label, buf);
         } else {
-            snprintf(buf, sizeof(buf), "voice from !%08x  %u.%us",
-                     (unsigned)from,
-                     (unsigned)(dur / 1000), (unsigned)((dur / 100) % 10));
+            lv_label_set_text(refs.btn_label, LV_SYMBOL_PLAY);
+            // Leave the info label alone for already-played bubbles; the
+            // duration text from creation time is still accurate.
         }
     }
-    lv_label_set_text(vt_player_info_label, buf);
 }
 
 void TFTView_320x240::vtPlayerBtnClickedCb(lv_event_t *e)
@@ -1857,10 +1893,19 @@ void TFTView_320x240::vtPlayerBtnClickedCb(lv_event_t *e)
     if (!self) return;
     IClientBase *client = self->controller ? self->controller->getClient() : nullptr;
     if (!client) return;
+    lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);
+    const uint32_t mid = (uint32_t)(uintptr_t)(btn ? btn->user_data : nullptr);
     if (client->voicePlayIsPlaying()) {
-        client->voicePlayStop();
-    } else if (client->voicePlayPendingCount() > 0) {
-        client->voicePlayNext();
+        if (mid == client->voicePlayMessageId()) {
+            client->voicePlayStop();
+        }
+        // Click on a non-playing bubble while another is playing: ignore for
+        // now; could queue or interrupt-then-play in a later iteration.
+    } else if (mid != 0) {
+        // Re-play by id; this works as long as the message is still in the
+        // pending queue. Once played, the audio is dropped and the click is a
+        // no-op (bubble stays visible as a record of the conversation).
+        client->voicePlayByMessageId(mid);
     }
 }
 

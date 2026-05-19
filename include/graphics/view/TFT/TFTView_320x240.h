@@ -2,6 +2,7 @@
 
 #include "graphics/common/MeshtasticView.h"
 #include "meshtastic/clientonly.pb.h"
+#include <map>
 #include <set>
 
 class MapPanel;
@@ -221,17 +222,24 @@ class TFTView_320x240 : public MeshtasticView
     // voice message instead of text (i.e. there's audio armed and ready).
     bool consumeVoiceSendIfArmed(void);
 
-    // Mini-player widget for received voice messages (Phase 7c). Lives on
-    // lv_layer_top(); visible only when there's something to play or playback
-    // is in progress. Driven by an lv_timer polling the IClientBase voicePlay*
-    // accessors every 250 ms.
-    lv_obj_t   *vt_player_panel = nullptr;
-    lv_obj_t   *vt_player_btn = nullptr;
-    lv_obj_t   *vt_player_btn_label = nullptr;
-    lv_obj_t   *vt_player_info_label = nullptr;
+    // Mini-player widgets for received voice messages (Phase 7c). Each voice
+    // arrival becomes its own chat-bubble in the active conversation,
+    // alongside text bubbles. An lv_timer polls firmware state every 250 ms
+    // and (a) creates new bubbles for messages it hasn't seen yet, and (b)
+    // updates each existing bubble's play/stop glyph + time text based on
+    // whether that bubble's message is currently playing.
+    struct VoiceBubbleRefs {
+        lv_obj_t *panel;       // the chat-bubble container
+        lv_obj_t *btn_label;   // play/stop glyph inside the button
+        lv_obj_t *info_label;  // sender + duration / elapsed
+    };
     lv_timer_t *vt_player_timer = nullptr;
-    void buildVoicePlayerWidget(void);
-    void updateVoicePlayerWidget(void);
+    std::map<uint32_t, VoiceBubbleRefs> voice_bubbles; // keyed by message_id
+
+    void buildVoicePlayerTimer(void);
+    void updateVoiceBubbles(void);
+    void addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_t message_id,
+                        uint32_t approx_duration_ms);
     static void vtPlayerBtnClickedCb(lv_event_t *e);
     static void vtPlayerTimerCb(lv_timer_t *t);
     void ui_set_active(lv_obj_t *b, lv_obj_t *p, lv_obj_t *tp);

@@ -51,11 +51,13 @@ class IClientBase
     // request. All return harmless defaults if no voice backend is present.
     virtual size_t   voicePlayPendingCount() const { return 0; }
     virtual bool     voicePlayNext() { return false; }
+    virtual bool     voicePlayByMessageId(uint32_t /*message_id*/) { return false; }
     virtual void     voicePlayStop() {}
     virtual bool     voicePlayIsPlaying() const { return false; }
     virtual uint32_t voicePlayElapsedMs() const { return 0; }
     virtual uint32_t voicePlayTotalMs() const { return 0; }
     virtual uint32_t voicePlayFromNode() const { return 0; }
+    virtual uint32_t voicePlayMessageId() const { return 0; }
     // Inspect a queued message without consuming it. Returns false past end.
     virtual bool     voicePlayPeek(size_t /*index*/, uint32_t &from, uint32_t &message_id,
                                    uint32_t &approx_duration_ms) const
