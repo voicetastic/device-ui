@@ -11,6 +11,7 @@
 #include "graphics/map/MapPanel.h"
 #include "graphics/view/TFT/Themes.h"
 #include "images.h"
+#include "input/I2CKeyboardInputDriver.h" // for SpecialKey + registerSpecialKeyCallback
 #include "input/InputDriver.h"
 #include "lv_i18n.h"
 #include "lvgl_private.h"
@@ -166,6 +167,15 @@ void TFTView_320x240::init(IClientBase *client)
     ILOG_DEBUG("### Total size: %d bytes ###", total_size);
 
     MeshtasticView::init(client);
+
+    // Subscribe to the keyboard driver's special-key channel. SYM+0 (the
+    // microphone-icon key on the T-Deck) fires SpecialKey::VoiceToggle, which
+    // we drive into the IClientBase voice API. Capturing `this` by value here
+    // is safe because TFTView_320x240 is a singleton with the lifetime of the
+    // process.
+    registerSpecialKeyCallback([this](SpecialKey k) {
+        if (k == SpecialKey::VoiceToggle) this->handleVoiceToggle();
+    });
 
     ui_init_boot();
     FileLoader::init(&fileSystem);
@@ -1675,6 +1685,17 @@ void TFTView_320x240::ui_event_message_ready(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
     if (event_code == LV_EVENT_READY) {
+        // Voice path: if there's an armed voice recording, ENTER sends it and
+        // we skip the text-message path entirely.
+        if (THIS->consumeVoiceSendIfArmed()) {
+            lv_textarea_set_text(objects.message_input_area, "");
+            lv_textarea_set_placeholder_text(objects.message_input_area, _("Enter Text ..."));
+            if (!lv_obj_has_flag(objects.keyboard, LV_OBJ_FLAG_HIDDEN)) {
+                THIS->hideKeyboard(objects.messages_panel);
+            }
+            lv_group_focus_obj(objects.message_input_area);
+            return;
+        }
         char *txt = (char *)lv_textarea_get_text(objects.message_input_area);
         uint32_t len = strlen(txt);
         if (len) {
@@ -1690,6 +1711,47 @@ void TFTView_320x240::ui_event_message_ready(lv_event_t *e)
             }
         }
     }
+}
+
+void TFTView_320x240::handleVoiceToggle(void)
+{
+    IClientBase *client = controller ? controller->getClient() : nullptr;
+    if (!client) return;
+
+    const IClientBase::VoiceState state = client->voiceRecordState();
+    if (state == IClientBase::eVoiceIdle) {
+        // Decide target from the chat screen's active container, mirroring
+        // handleAddMessage()'s logic.
+        uint32_t to = 0xFFFFFFFFu; // broadcast sentinel
+        uint8_t ch = 0;
+        if (activeMsgContainer != nullptr) {
+            uint32_t channelOrNode = (unsigned long)activeMsgContainer->user_data;
+            if (channelOrNode < c_max_channels) {
+                ch = (uint8_t)channelOrNode;
+            } else {
+                ch = (uint8_t)(unsigned long)nodes[channelOrNode]->user_data;
+                to = channelOrNode;
+            }
+        }
+        if (client->voiceRecordStart(to, ch, 30000)) {
+            lv_textarea_set_placeholder_text(objects.message_input_area, _("REC \xe2\x80\xa6 SYM+0 to stop"));
+        }
+    } else if (state == IClientBase::eVoiceRecording) {
+        client->voiceRecordStop();
+        lv_textarea_set_placeholder_text(objects.message_input_area, _("Voice armed \xe2\x80\xa2 ENTER to send"));
+    } else if (state == IClientBase::eVoiceArmed) {
+        // Third tap on SYM+0 while armed = cancel.
+        client->voiceRecordCancel();
+        lv_textarea_set_placeholder_text(objects.message_input_area, _("Enter Text ..."));
+    }
+}
+
+bool TFTView_320x240::consumeVoiceSendIfArmed(void)
+{
+    IClientBase *client = controller ? controller->getClient() : nullptr;
+    if (!client) return false;
+    if (client->voiceRecordState() != IClientBase::eVoiceArmed) return false;
+    return client->voiceRecordSend();
 }
 
 // basic settings buttons

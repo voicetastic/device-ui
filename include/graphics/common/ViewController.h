@@ -17,6 +17,12 @@ class ViewController
     virtual bool isStandalone(void);
     virtual void stop(void);
 
+    // Direct read access to the IClientBase the controller was initialised
+    // with, so view code can invoke client-level hooks (e.g. voicetastic
+    // voiceRecordStart / voiceRecordStop / voiceRecordSend) without going
+    // through every per-feature wrapper.
+    IClientBase *getClient() const { return client; }
+
     // device config
     virtual uint32_t requestDeviceUIConfig(void);
     virtual uint32_t requestDeviceConfig(uint32_t nodeId = 0);

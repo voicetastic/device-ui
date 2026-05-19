@@ -1,9 +1,21 @@
 #pragma once
 
 #include "input/InputDriver.h"
+#include <functional>
 #include <list>
 #include <memory>
 #include <string>
+
+// A "special key" callback the chat screen registers to react to the T-Deck's
+// SYM+0 (microphone) chord, which the TCA8418 emits as the single byte 0xE0.
+// The keyboard driver discards 0xE0 from LVGL (it would otherwise be inserted
+// as the Latin-1 'à' into focused textareas), and fires this callback instead.
+enum class SpecialKey : uint8_t {
+    VoiceToggle = 0,  // SYM+0  (T-Deck microphone key)
+};
+using SpecialKeyCallback = std::function<void(SpecialKey)>;
+void registerSpecialKeyCallback(SpecialKeyCallback cb);
+void fireSpecialKey(SpecialKey k);  // exposed for the driver and tests
 
 class I2CKeyboardInputDriver : public InputDriver
 {

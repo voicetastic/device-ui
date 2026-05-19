@@ -8,6 +8,17 @@
 
 I2CKeyboardInputDriver::KeyboardList I2CKeyboardInputDriver::i2cKeyboardList;
 
+namespace {
+SpecialKeyCallback s_specialKeyCallback;
+} // namespace
+
+void registerSpecialKeyCallback(SpecialKeyCallback cb) { s_specialKeyCallback = std::move(cb); }
+
+void fireSpecialKey(SpecialKey k)
+{
+    if (s_specialKeyCallback) s_specialKeyCallback(k);
+}
+
 I2CKeyboardInputDriver::I2CKeyboardInputDriver(void) {}
 
 void I2CKeyboardInputDriver::init(void)
@@ -84,8 +95,17 @@ void TDeckKeyboardInputDriver::readKeyboard(uint8_t address, lv_indev_t *indev, 
     uint8_t bytes = Wire.requestFrom(address, 1);
     if (Wire.available() > 0 && bytes > 0) {
         keyValue = Wire.read();
-        // ignore empty reads and keycode 224(E0, shift-0 on T-Deck) which causes internal issues
-        if (keyValue != (char)0x00 && keyValue != (char)0xE0) {
+        if (keyValue == (char)0xE0) {
+            // SYM+0 chord (microphone key on the T-Deck silk-screen). Fire the
+            // registered special-key callback (the chat screen subscribes to it
+            // to toggle voicetastic recording). LVGL sees no key event.
+            data->state = LV_INDEV_STATE_RELEASED;
+            data->key = 0;
+            fireSpecialKey(SpecialKey::VoiceToggle);
+            return;
+        }
+        // ignore empty reads
+        if (keyValue != (char)0x00) {
             data->state = LV_INDEV_STATE_PRESSED;
             ILOG_DEBUG("key press value: %d", (int)keyValue);
 

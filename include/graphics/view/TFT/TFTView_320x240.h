@@ -213,6 +213,13 @@ class TFTView_320x240 : public MeshtasticView
     void enterProgrammingMode(void);
     void updateTheme(void);
     void ui_events_init(void);
+
+    // Voicetastic SYM+0 toggle: idle -> recording -> armed -> sent/cancelled.
+    // Hooked into the I2CKeyboardInputDriver via registerSpecialKeyCallback().
+    void handleVoiceToggle(void);
+    // Returns true if the current message_input_area ENTER press should send a
+    // voice message instead of text (i.e. there's audio armed and ready).
+    bool consumeVoiceSendIfArmed(void);
     void ui_set_active(lv_obj_t *b, lv_obj_t *p, lv_obj_t *tp);
     void showKeyboard(lv_obj_t *textArea);
     void hideKeyboard(lv_obj_t *panel);
