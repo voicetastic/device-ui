@@ -91,19 +91,26 @@ TDeckKeyboardInputDriver::TDeckKeyboardInputDriver(uint8_t address)
 
 void TDeckKeyboardInputDriver::readKeyboard(uint8_t address, lv_indev_t *indev, lv_indev_data_t *data)
 {
+    // Debounce 0xE0 (SYM+0) at function scope so a held chord doesn't fire the
+    // voice-toggle callback on every keyboard poll. We only fire on a rising
+    // edge: previous byte was something else, current byte is 0xE0.
+    static char prevTDeckKey = 0;
+
     char keyValue = 0;
     uint8_t bytes = Wire.requestFrom(address, 1);
     if (Wire.available() > 0 && bytes > 0) {
         keyValue = Wire.read();
         if (keyValue == (char)0xE0) {
-            // SYM+0 chord (microphone key on the T-Deck silk-screen). Fire the
-            // registered special-key callback (the chat screen subscribes to it
-            // to toggle voicetastic recording). LVGL sees no key event.
+            // SYM+0 chord (microphone key on the T-Deck silk-screen).
             data->state = LV_INDEV_STATE_RELEASED;
             data->key = 0;
-            fireSpecialKey(SpecialKey::VoiceToggle);
+            if (prevTDeckKey != (char)0xE0) {
+                fireSpecialKey(SpecialKey::VoiceToggle);
+            }
+            prevTDeckKey = keyValue;
             return;
         }
+        prevTDeckKey = keyValue; // reset edge state for next 0xE0
         // ignore empty reads
         if (keyValue != (char)0x00) {
             data->state = LV_INDEV_STATE_PRESSED;
