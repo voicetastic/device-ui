@@ -174,7 +174,16 @@ void TFTView_320x240::init(IClientBase *client)
     // is safe because TFTView_320x240 is a singleton with the lifetime of the
     // process.
     registerSpecialKeyCallback([this](SpecialKey k) {
-        if (k == SpecialKey::VoiceToggle) this->handleVoiceToggle();
+        if (k == SpecialKey::VoiceToggle) {
+            this->handleVoiceToggle();
+        } else if (k == SpecialKey::VoicePlayNext) {
+            // Temporary "play oldest queued voice message" hotkey, replaced by
+            // the chat-screen mini-player widget once it lands.
+            IClientBase *client = controller ? controller->getClient() : nullptr;
+            if (client && client->voicePlayPendingCount() > 0) {
+                client->voicePlayNext();
+            }
+        }
     });
 
     ui_init_boot();
