@@ -418,6 +418,12 @@ void TFTView_320x240::init_screens(void)
     lv_obj_clear_flag(objects.basic_settings_backup_restore_button, LV_OBJ_FLAG_HIDDEN);
 #endif
 
+    // Hand-rolled Voicetastic bitrate dropdown — the EEZ project doesn't
+    // include this control, so we attach it to the basic_settings tab at
+    // runtime. No-op if the underlying client doesn't implement
+    // voiceSetCodec2Mode (IClientBase's default impl does nothing).
+    buildVoicetasticBitratePicker();
+
     if (controller->isStandalone()) {
         lv_obj_add_flag(objects.progmode_button, LV_OBJ_FLAG_HIDDEN);
     }
@@ -1762,6 +1768,56 @@ bool TFTView_320x240::consumeVoiceSendIfArmed(void)
     if (!client) return false;
     if (client->voiceRecordState() != IClientBase::eVoiceArmed) return false;
     return client->voiceRecordSend();
+}
+
+// ---------- Voicetastic bitrate picker (Basic Settings tab) ----------
+
+void TFTView_320x240::buildVoicetasticBitratePicker(void)
+{
+    // Parent: the same tab page that hosts the other basic-settings buttons.
+    // We pull it from one of the existing buttons rather than referencing
+    // objects.tab_page_basic_settings_buttons (or whatever the EEZ-generated
+    // container is) so this still works if that name ever changes.
+    lv_obj_t *parent = lv_obj_get_parent(objects.basic_settings_user_button);
+    if (!parent) return;
+
+    // Container that lays the label + dropdown out horizontally and matches
+    // the visual rhythm of the surrounding setting rows (~30 px tall).
+    lv_obj_t *row = lv_obj_create(parent);
+    lv_obj_set_size(row, LV_PCT(95), 30);
+    lv_obj_set_style_align(row, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(row, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *label = lv_label_create(row);
+    lv_label_set_text(label, _("Voice bitrate"));
+
+    vt_bitrate_dropdown = lv_dropdown_create(row);
+    lv_dropdown_set_options_static(vt_bitrate_dropdown,
+                                   "3.2 kbps\n2.4 kbps\n1.6 kbps\n1.4 kbps\n1.3 kbps\n1.2 kbps");
+    lv_obj_set_width(vt_bitrate_dropdown, 110);
+    // Initial selection comes from the firmware-persisted value so the UI
+    // reflects what's actually in effect after a reboot.
+    IClientBase *client = controller ? controller->getClient() : nullptr;
+    uint8_t mode = client ? client->voiceGetCodec2Mode() : 5;
+    if (mode > 5) mode = 5;
+    lv_dropdown_set_selected(vt_bitrate_dropdown, mode);
+    lv_obj_add_event_cb(vt_bitrate_dropdown, vtBitrateChangedCb, LV_EVENT_VALUE_CHANGED, this);
+}
+
+void TFTView_320x240::vtBitrateChangedCb(lv_event_t *e)
+{
+    TFTView_320x240 *self = (TFTView_320x240 *)lv_event_get_user_data(e);
+    if (!self || !self->vt_bitrate_dropdown) return;
+    const uint16_t sel = lv_dropdown_get_selected(self->vt_bitrate_dropdown);
+    if (sel > 5) return; // out-of-range guard; dropdown shouldn't but be defensive
+    IClientBase *client = self->controller ? self->controller->getClient() : nullptr;
+    if (!client) return;
+    client->voiceSetCodec2Mode((uint8_t)sel);
 }
 
 // ---------- Voicetastic chat-bubble mini-player (Phase 7c) ----------

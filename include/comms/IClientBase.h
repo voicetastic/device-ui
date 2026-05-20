@@ -46,6 +46,13 @@ class IClientBase
     virtual VoiceState voiceRecordState() const { return eVoiceIdle; }
     virtual uint32_t voiceRecordElapsedMs() const { return 0; }
 
+    // Codec2 mode selection (firmware-side persistent setting). The settings
+    // UI surfaces a dropdown bound to these hooks. Returned/accepted value is
+    // the on-wire codec_param ordinal: 0=3.2 kbps, 1=2.4, 2=1.6, 3=1.4, 4=1.3,
+    // 5=1.2 (default). Out-of-range values are ignored by the implementation.
+    virtual uint8_t voiceGetCodec2Mode() const { return 5; }
+    virtual void    voiceSetCodec2Mode(uint8_t /*mode*/) {}
+
     // Mini-player playback hooks. Received voice messages queue up in the
     // firmware; the chat-screen widget enumerates and plays them on user
     // request. All return harmless defaults if no voice backend is present.
