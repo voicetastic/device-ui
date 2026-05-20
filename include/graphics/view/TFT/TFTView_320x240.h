@@ -244,12 +244,15 @@ class TFTView_320x240 : public MeshtasticView
     static void vtPlayerTimerCb(lv_timer_t *t);
 
     // Voicetastic bitrate picker injected into the Basic Settings tab. A
-    // dropdown listing the six Codec2 modes, with the current selection
-    // pulled from IClientBase::voiceGetCodec2Mode at init time and any user
-    // change pushed back via voiceSetCodec2Mode.
-    lv_obj_t *vt_bitrate_dropdown = nullptr;
+    // button styled identically to the surrounding setting rows whose label
+    // tracks the current Codec2 mode; tapping it opens a modal with the six
+    // options and the chosen one is pushed back via voiceSetCodec2Mode.
+    lv_obj_t *vt_bitrate_button = nullptr;
+    lv_obj_t *vt_bitrate_label = nullptr;
     void buildVoicetasticBitratePicker(void);
-    static void vtBitrateChangedCb(lv_event_t *e);
+    void refreshVoicetasticBitrateLabel(void);
+    static void vtBitrateButtonCb(lv_event_t *e);
+    static void vtBitratePickCb(lv_event_t *e);
     void ui_set_active(lv_obj_t *b, lv_obj_t *p, lv_obj_t *tp);
     void showKeyboard(lv_obj_t *textArea);
     void hideKeyboard(lv_obj_t *panel);

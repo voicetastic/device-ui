@@ -1772,52 +1772,127 @@ bool TFTView_320x240::consumeVoiceSendIfArmed(void)
 
 // ---------- Voicetastic bitrate picker (Basic Settings tab) ----------
 
+// Static so vtBitratePickCb (a lv_event_cb_t with C linkage) can read the
+// chosen index. The Codec2 ordinals (0=3.2 kbps … 5=1.2 kbps) match these
+// indices 1:1; the array is shared between the modal builder and the
+// post-pick label refresh.
+static const char *kVtBitrateLabels[6] = {
+    "3.2 kbps", "2.4 kbps", "1.6 kbps", "1.4 kbps", "1.3 kbps", "1.2 kbps"};
+
 void TFTView_320x240::buildVoicetasticBitratePicker(void)
 {
     // Parent: the same tab page that hosts the other basic-settings buttons.
     // We pull it from one of the existing buttons rather than referencing
-    // objects.tab_page_basic_settings_buttons (or whatever the EEZ-generated
-    // container is) so this still works if that name ever changes.
+    // a possibly-renamed container object directly.
     lv_obj_t *parent = lv_obj_get_parent(objects.basic_settings_user_button);
     if (!parent) return;
 
-    // Container that lays the label + dropdown out horizontally and matches
-    // the visual rhythm of the surrounding setting rows (~30 px tall).
-    lv_obj_t *row = lv_obj_create(parent);
-    lv_obj_set_size(row, LV_PCT(95), 30);
-    lv_obj_set_style_align(row, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_all(row, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+    // Mirror the styling of the generated settings buttons (see
+    // generated/ui_320x240/screens.c, BasicSettingsUserButton block).
+    vt_bitrate_button = lv_btn_create(parent);
+    lv_obj_set_size(vt_bitrate_button, LV_PCT(95), 30);
+    add_style_settings_button_style(vt_bitrate_button);
+    lv_obj_set_style_align(vt_bitrate_button, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(vt_bitrate_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(vt_bitrate_button, lv_color_hex(0xff4db270), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(vt_bitrate_button, lv_color_hex(0xff015114), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(vt_bitrate_button, lv_color_hex(0xff808080), LV_PART_MAIN | LV_STATE_DISABLED);
 
-    lv_obj_t *label = lv_label_create(row);
-    lv_label_set_text(label, _("Voice bitrate"));
+    vt_bitrate_label = lv_label_create(vt_bitrate_button);
+    lv_obj_set_size(vt_bitrate_label, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_label_set_long_mode(vt_bitrate_label, LV_LABEL_LONG_DOT);
+    lv_obj_set_style_align(vt_bitrate_label, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    refreshVoicetasticBitrateLabel();
 
-    vt_bitrate_dropdown = lv_dropdown_create(row);
-    lv_dropdown_set_options_static(vt_bitrate_dropdown,
-                                   "3.2 kbps\n2.4 kbps\n1.6 kbps\n1.4 kbps\n1.3 kbps\n1.2 kbps");
-    lv_obj_set_width(vt_bitrate_dropdown, 110);
-    // Initial selection comes from the firmware-persisted value so the UI
-    // reflects what's actually in effect after a reboot.
+    lv_obj_add_event_cb(vt_bitrate_button, vtBitrateButtonCb, LV_EVENT_CLICKED, this);
+}
+
+void TFTView_320x240::refreshVoicetasticBitrateLabel(void)
+{
+    if (!vt_bitrate_label) return;
     IClientBase *client = controller ? controller->getClient() : nullptr;
     uint8_t mode = client ? client->voiceGetCodec2Mode() : 5;
     if (mode > 5) mode = 5;
-    lv_dropdown_set_selected(vt_bitrate_dropdown, mode);
-    lv_obj_add_event_cb(vt_bitrate_dropdown, vtBitrateChangedCb, LV_EVENT_VALUE_CHANGED, this);
+    char buf[32];
+    lv_snprintf(buf, sizeof(buf), "%s %s", _("Voice bitrate:"), kVtBitrateLabels[mode]);
+    lv_label_set_text(vt_bitrate_label, buf);
 }
 
-void TFTView_320x240::vtBitrateChangedCb(lv_event_t *e)
+// Opens the picker modal. Layout: a centred panel listing the 6 modes as
+// stacked buttons + a Back row. Clicking a mode applies it and dismisses.
+void TFTView_320x240::vtBitrateButtonCb(lv_event_t *e)
 {
     TFTView_320x240 *self = (TFTView_320x240 *)lv_event_get_user_data(e);
-    if (!self || !self->vt_bitrate_dropdown) return;
-    const uint16_t sel = lv_dropdown_get_selected(self->vt_bitrate_dropdown);
-    if (sel > 5) return; // out-of-range guard; dropdown shouldn't but be defensive
-    IClientBase *client = self->controller ? self->controller->getClient() : nullptr;
-    if (!client) return;
-    client->voiceSetCodec2Mode((uint8_t)sel);
+    if (!self) return;
+
+    // Full-screen translucent overlay (closes the modal if tapped outside).
+    lv_obj_t *overlay = lv_obj_create(lv_screen_active());
+    lv_obj_remove_style_all(overlay);
+    lv_obj_set_size(overlay, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_bg_color(overlay, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(overlay, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_clear_flag(overlay, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_event_cb(overlay, [](lv_event_t *ev) {
+        lv_obj_t *o = (lv_obj_t *)lv_event_get_target(ev);
+        if (lv_event_get_target(ev) == lv_event_get_current_target(ev)) lv_obj_delete(o);
+    }, LV_EVENT_CLICKED, NULL);
+
+    // Centered panel hosting the 6 + 1 buttons.
+    lv_obj_t *panel = lv_obj_create(overlay);
+    lv_obj_set_size(panel, 200, 215);
+    lv_obj_center(panel);
+    lv_obj_set_style_pad_all(panel, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(panel, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_clear_flag(panel, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *title = lv_label_create(panel);
+    lv_label_set_text(title, _("Voice bitrate"));
+
+    for (uint8_t i = 0; i < 6; ++i) {
+        lv_obj_t *btn = lv_btn_create(panel);
+        lv_obj_set_size(btn, LV_PCT(100), 22);
+        add_style_settings_button_style(btn);
+        lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_t *lbl = lv_label_create(btn);
+        lv_label_set_text(lbl, kVtBitrateLabels[i]);
+        lv_obj_set_style_align(lbl, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+        // Stash the mode ordinal on the button itself (no lambda capture).
+        lv_obj_set_user_data(btn, (void *)(uintptr_t)i);
+        lv_obj_add_event_cb(btn, vtBitratePickCb, LV_EVENT_CLICKED, self);
+    }
+
+    lv_obj_t *back = lv_btn_create(panel);
+    lv_obj_set_size(back, LV_PCT(100), 22);
+    add_style_settings_button_style(back);
+    lv_obj_set_style_shadow_width(back, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_t *back_lbl = lv_label_create(back);
+    lv_label_set_text(back_lbl, _("Back"));
+    lv_obj_set_style_align(back_lbl, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Tapping "Back" just tears down the overlay (and everything under it).
+    lv_obj_add_event_cb(back, [](lv_event_t *ev) {
+        lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(ev);
+        lv_obj_t *root = btn;
+        while (lv_obj_get_parent(root) && lv_obj_get_parent(root) != lv_screen_active()) root = lv_obj_get_parent(root);
+        lv_obj_delete(root);
+    }, LV_EVENT_CLICKED, NULL);
+}
+
+void TFTView_320x240::vtBitratePickCb(lv_event_t *e)
+{
+    TFTView_320x240 *self = (TFTView_320x240 *)lv_event_get_user_data(e);
+    lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);
+    if (!self || !btn) return;
+    const uint8_t mode = (uint8_t)(uintptr_t)lv_obj_get_user_data(btn);
+    if (mode > 5) return;
+    if (IClientBase *client = self->controller ? self->controller->getClient() : nullptr) {
+        client->voiceSetCodec2Mode(mode);
+    }
+    self->refreshVoicetasticBitrateLabel();
+    // Tear down the overlay (the panel sits at one level under it).
+    lv_obj_t *root = btn;
+    while (lv_obj_get_parent(root) && lv_obj_get_parent(root) != lv_screen_active()) root = lv_obj_get_parent(root);
+    lv_obj_delete(root);
 }
 
 // ---------- Voicetastic chat-bubble mini-player (Phase 7c) ----------
