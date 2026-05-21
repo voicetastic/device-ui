@@ -188,6 +188,15 @@ void TFTView_320x240::init(IClientBase *client)
     buildVoicePlayerTimer();
 
     ui_init_boot();
+    // Voicetastic brand overrides: warm-brown boot surface with a near-black
+    // logo. EEZ hardcodes Meshtastic green; replace before the boot screen
+    // is presented so there's no green flash.
+    lv_obj_set_style_bg_color(objects.boot_screen, lv_color_hex(0x8F4C35),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_image_recolor(objects.boot_logo, lv_color_hex(0x1A110F),
+                                   LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(objects.boot_logo, 255,
+                                       LV_PART_MAIN | LV_STATE_DEFAULT);
     FileLoader::init(&fileSystem);
     FileLoader::loadBootImage(objects.boot_logo);
     // if boot logo is too big remove the label and center the image
@@ -258,7 +267,8 @@ bool TFTView_320x240::setupUIConfig(const meshtastic_DeviceUIConfig &uiconfig)
     Themes::recolorButton(objects.home_bell_button, false);
     Themes::recolorText(objects.home_bell_label, false);
 
-    lv_obj_set_style_bg_img_recolor(objects.home_button, colorMesh, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // M3 initial active state: home_button starts active on boot.
+    Themes::setMainButtonActive(objects.home_button, true);
 
     // set brightness
     if (displaydriver->hasLight())
@@ -479,15 +489,15 @@ void TFTView_320x240::init_screens(void)
  */
 void TFTView_320x240::ui_set_active(lv_obj_t *b, lv_obj_t *p, lv_obj_t *tp)
 {
+    // M3 nav selection: light primaryContainer fill + dark icon on the
+    // active button; surfaceContainerHigh (default home button bg) on the
+    // others. No border — the fill IS the selection indicator.
     if (activeButton) {
         lv_obj_set_style_border_width(activeButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        if (Themes::get() == Themes::eDark)
-            lv_obj_set_style_bg_img_recolor_opa(activeButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_img_recolor(activeButton, colorGray, LV_PART_MAIN | LV_STATE_DEFAULT);
+        Themes::setMainButtonActive(activeButton, false);
     }
-    lv_obj_set_style_border_width(b, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_recolor(b, colorMesh, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_img_recolor_opa(b, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(b, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    Themes::setMainButtonActive(b, true);
 
     if (activePanel) {
         lv_obj_add_flag(activePanel, LV_OBJ_FLAG_HIDDEN);
@@ -620,6 +630,9 @@ void TFTView_320x240::apply_hotfix(void)
     lv_textarea_set_placeholder_text(objects.message_input_area, _("Enter Text ..."));
     lv_textarea_set_placeholder_text(objects.nodes_filter_name_area, _("!Enter Filter ..."));
     lv_textarea_set_placeholder_text(objects.nodes_hl_name_area, _("Enter Filter ..."));
+
+    // Voicetastic branding for the top app bar.
+    lv_label_set_text(objects.meshtastic_label, "Voicetastic");
 
     auto applyStyle = [](lv_obj_t *tab_buttons) {
         for (int i = 0; i < lv_obj_get_child_count(tab_buttons); i++) {
@@ -4328,7 +4341,9 @@ void TFTView_320x240::ui_event_ok(lv_event_t *e)
                 THIS->setTheme(value);
                 THIS->db.uiConfig.theme = meshtastic_Theme(value);
                 THIS->controller->storeUIConfig(THIS->db.uiConfig);
-                lv_obj_set_style_bg_img_recolor(objects.settings_button, colorMesh, LV_PART_MAIN | LV_STATE_DEFAULT);
+                // Re-apply M3 active fill to the current nav button after a
+                // theme swap (theme colours just changed).
+                if (THIS->activeButton) Themes::setMainButtonActive(THIS->activeButton, true);
             }
 
             lv_obj_add_flag(objects.settings_theme_panel, LV_OBJ_FLAG_HIDDEN);
