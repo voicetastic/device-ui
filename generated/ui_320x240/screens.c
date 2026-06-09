@@ -2371,10 +2371,12 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_img_create(parent_obj);
                     objects.meshtastic_image = obj;
                     lv_obj_set_pos(obj, -60, 0);
-                    lv_obj_set_size(obj, 36, 17);
-                    lv_img_set_src(obj, &img_meshtastic_logo_image);
+                    lv_obj_set_size(obj, 23, 18);
+                    lv_img_set_src(obj, &img_meshtastic_boot_logo_image);
                     lv_img_set_pivot(obj, 0, 0);
                     add_style_top_image_style(obj);
+                    lv_image_set_inner_align(obj, LV_IMAGE_ALIGN_CONTAIN);
+                    lv_obj_set_style_image_recolor_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_image_opa(obj, 255, LV_PART_MAIN | LV_STATE_DISABLED);
                     lv_obj_set_style_image_recolor(obj, lv_color_hex(0xffffffff), LV_PART_MAIN | LV_STATE_DISABLED);
