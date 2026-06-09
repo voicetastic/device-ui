@@ -21,7 +21,8 @@ lint:
     - yamllint@1.38.0
     - bandit@1.9.4
     - checkov@3.2.529
-    - terrascan@1.19.9
+    # terrascan disabled: redundant with hadolint for our only Dockerfile and
+    # fails to run in fork CI (cannot fetch its policy repos over the network).
     - trivy@0.70.0
     #- trufflehog@3.63.2-rc0
     - taplo@0.10.0
