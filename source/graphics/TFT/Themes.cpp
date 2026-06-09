@@ -828,6 +828,17 @@ void Themes::recolorText(lv_obj_t *obj, bool enabled)
                                 LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
+void Themes::recolorContainer(lv_obj_t *obj)
+{
+    // Theme a modal/popup surface to the same look as other popups
+    // (surfaceContainerHigh bg, outlineVariant border, onSurface text), so it
+    // stops rendering on LVGL's default theme.
+    lv_obj_set_style_bg_color(obj, lv_color_hex(THEME(eHomeContainerBg)), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(obj, lv_color_hex(THEME(eHomeContainerBorder)), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(obj, lv_color_hex(THEME(eHomeContainerText)), LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
 void Themes::recolorTopLabel(lv_obj_t *obj, bool alert)
 {
     lv_color_t color;

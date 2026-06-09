@@ -191,12 +191,9 @@ void TFTView_320x240::init(IClientBase *client)
     // Voicetastic brand overrides: warm-brown boot surface with a near-black
     // logo. EEZ hardcodes Meshtastic green; replace before the boot screen
     // is presented so there's no green flash.
-    lv_obj_set_style_bg_color(objects.boot_screen, lv_color_hex(0x8F4C35),
-                              LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_image_recolor(objects.boot_logo, lv_color_hex(0x1A110F),
-                                   LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(objects.boot_logo, 255,
-                                       LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(objects.boot_screen, lv_color_hex(0x8F4C35), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_image_recolor(objects.boot_logo, lv_color_hex(0x1A110F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(objects.boot_logo, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     FileLoader::init(&fileSystem);
     FileLoader::loadBootImage(objects.boot_logo);
     // if boot logo is too big remove the label and center the image
@@ -1745,7 +1742,8 @@ void TFTView_320x240::ui_event_message_ready(lv_event_t *e)
 void TFTView_320x240::handleVoiceToggle(void)
 {
     IClientBase *client = controller ? controller->getClient() : nullptr;
-    if (!client) return;
+    if (!client)
+        return;
 
     const IClientBase::VoiceState state = client->voiceRecordState();
     if (state == IClientBase::eVoiceIdle) {
@@ -1778,8 +1776,10 @@ void TFTView_320x240::handleVoiceToggle(void)
 bool TFTView_320x240::consumeVoiceSendIfArmed(void)
 {
     IClientBase *client = controller ? controller->getClient() : nullptr;
-    if (!client) return false;
-    if (client->voiceRecordState() != IClientBase::eVoiceArmed) return false;
+    if (!client)
+        return false;
+    if (client->voiceRecordState() != IClientBase::eVoiceArmed)
+        return false;
     return client->voiceRecordSend();
 }
 
@@ -1789,8 +1789,7 @@ bool TFTView_320x240::consumeVoiceSendIfArmed(void)
 // chosen index. The Codec2 ordinals (0=3.2 kbps … 5=1.2 kbps) match these
 // indices 1:1; the array is shared between the modal builder and the
 // post-pick label refresh.
-static const char *kVtBitrateLabels[6] = {
-    "3.2 kbps", "2.4 kbps", "1.6 kbps", "1.4 kbps", "1.3 kbps", "1.2 kbps"};
+static const char *kVtBitrateLabels[6] = {"3.2 kbps", "2.4 kbps", "1.6 kbps", "1.4 kbps", "1.3 kbps", "1.2 kbps"};
 
 void TFTView_320x240::buildVoicetasticBitratePicker(void)
 {
@@ -1798,7 +1797,8 @@ void TFTView_320x240::buildVoicetasticBitratePicker(void)
     // We pull it from one of the existing buttons rather than referencing
     // a possibly-renamed container object directly.
     lv_obj_t *parent = lv_obj_get_parent(objects.basic_settings_user_button);
-    if (!parent) return;
+    if (!parent)
+        return;
 
     // Mirror the styling of the generated settings buttons (see
     // generated/ui_320x240/screens.c, BasicSettingsUserButton block).
@@ -1807,8 +1807,8 @@ void TFTView_320x240::buildVoicetasticBitratePicker(void)
     add_style_settings_button_style(vt_bitrate_button);
     lv_obj_set_style_align(vt_bitrate_button, LV_ALIGN_TOP_MID, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(vt_bitrate_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(vt_bitrate_button, lv_color_hex(0xff4db270), LV_PART_MAIN | LV_STATE_PRESSED);
-    lv_obj_set_style_text_color(vt_bitrate_button, lv_color_hex(0xff015114), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(vt_bitrate_button, lv_color_hex(0xffd29582), LV_PART_MAIN | LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(vt_bitrate_button, lv_color_hex(0xff000000), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_text_color(vt_bitrate_button, lv_color_hex(0xff808080), LV_PART_MAIN | LV_STATE_DISABLED);
 
     vt_bitrate_label = lv_label_create(vt_bitrate_button);
@@ -1822,10 +1822,12 @@ void TFTView_320x240::buildVoicetasticBitratePicker(void)
 
 void TFTView_320x240::refreshVoicetasticBitrateLabel(void)
 {
-    if (!vt_bitrate_label) return;
+    if (!vt_bitrate_label)
+        return;
     IClientBase *client = controller ? controller->getClient() : nullptr;
     uint8_t mode = client ? client->voiceGetCodec2Mode() : 5;
-    if (mode > 5) mode = 5;
+    if (mode > 5)
+        mode = 5;
     char buf[32];
     lv_snprintf(buf, sizeof(buf), "%s %s", _("Voice bitrate:"), kVtBitrateLabels[mode]);
     lv_label_set_text(vt_bitrate_label, buf);
@@ -1836,7 +1838,8 @@ void TFTView_320x240::refreshVoicetasticBitrateLabel(void)
 void TFTView_320x240::vtBitrateButtonCb(lv_event_t *e)
 {
     TFTView_320x240 *self = (TFTView_320x240 *)lv_event_get_user_data(e);
-    if (!self) return;
+    if (!self)
+        return;
 
     // Full-screen translucent overlay (closes the modal if tapped outside).
     lv_obj_t *overlay = lv_obj_create(lv_screen_active());
@@ -1845,15 +1848,20 @@ void TFTView_320x240::vtBitrateButtonCb(lv_event_t *e)
     lv_obj_set_style_bg_color(overlay, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(overlay, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_clear_flag(overlay, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_event_cb(overlay, [](lv_event_t *ev) {
-        lv_obj_t *o = (lv_obj_t *)lv_event_get_target(ev);
-        if (lv_event_get_target(ev) == lv_event_get_current_target(ev)) lv_obj_delete(o);
-    }, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(
+        overlay,
+        [](lv_event_t *ev) {
+            lv_obj_t *o = (lv_obj_t *)lv_event_get_target(ev);
+            if (lv_event_get_target(ev) == lv_event_get_current_target(ev))
+                lv_obj_delete(o);
+        },
+        LV_EVENT_CLICKED, NULL);
 
     // Centered panel hosting the 6 + 1 buttons.
     lv_obj_t *panel = lv_obj_create(overlay);
     lv_obj_set_size(panel, 200, 215);
     lv_obj_center(panel);
+    Themes::recolorContainer(panel); // match the app theme, not LVGL's default
     lv_obj_set_style_pad_all(panel, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(panel, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -1861,6 +1869,7 @@ void TFTView_320x240::vtBitrateButtonCb(lv_event_t *e)
 
     lv_obj_t *title = lv_label_create(panel);
     lv_label_set_text(title, _("Voice bitrate"));
+    Themes::recolorText(title, true); // themed onSurface text, readable on the panel
 
     for (uint8_t i = 0; i < 6; ++i) {
         lv_obj_t *btn = lv_btn_create(panel);
@@ -1883,28 +1892,35 @@ void TFTView_320x240::vtBitrateButtonCb(lv_event_t *e)
     lv_label_set_text(back_lbl, _("Back"));
     lv_obj_set_style_align(back_lbl, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     // Tapping "Back" just tears down the overlay (and everything under it).
-    lv_obj_add_event_cb(back, [](lv_event_t *ev) {
-        lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(ev);
-        lv_obj_t *root = btn;
-        while (lv_obj_get_parent(root) && lv_obj_get_parent(root) != lv_screen_active()) root = lv_obj_get_parent(root);
-        lv_obj_delete(root);
-    }, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(
+        back,
+        [](lv_event_t *ev) {
+            lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(ev);
+            lv_obj_t *root = btn;
+            while (lv_obj_get_parent(root) && lv_obj_get_parent(root) != lv_screen_active())
+                root = lv_obj_get_parent(root);
+            lv_obj_delete(root);
+        },
+        LV_EVENT_CLICKED, NULL);
 }
 
 void TFTView_320x240::vtBitratePickCb(lv_event_t *e)
 {
     TFTView_320x240 *self = (TFTView_320x240 *)lv_event_get_user_data(e);
     lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);
-    if (!self || !btn) return;
+    if (!self || !btn)
+        return;
     const uint8_t mode = (uint8_t)(uintptr_t)lv_obj_get_user_data(btn);
-    if (mode > 5) return;
+    if (mode > 5)
+        return;
     if (IClientBase *client = self->controller ? self->controller->getClient() : nullptr) {
         client->voiceSetCodec2Mode(mode);
     }
     self->refreshVoicetasticBitrateLabel();
     // Tear down the overlay (the panel sits at one level under it).
     lv_obj_t *root = btn;
-    while (lv_obj_get_parent(root) && lv_obj_get_parent(root) != lv_screen_active()) root = lv_obj_get_parent(root);
+    while (lv_obj_get_parent(root) && lv_obj_get_parent(root) != lv_screen_active())
+        root = lv_obj_get_parent(root);
     lv_obj_delete(root);
 }
 
@@ -1920,13 +1936,14 @@ void TFTView_320x240::buildVoicePlayerTimer(void)
 void TFTView_320x240::vtPlayerTimerCb(lv_timer_t *t)
 {
     TFTView_320x240 *self = (TFTView_320x240 *)lv_timer_get_user_data(t);
-    if (self) self->updateVoiceBubbles();
+    if (self)
+        self->updateVoiceBubbles();
 }
 
-void TFTView_320x240::addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_t message_id,
-                                     uint32_t approx_duration_ms)
+void TFTView_320x240::addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_t message_id, uint32_t approx_duration_ms)
 {
-    if (!container) return;
+    if (!container)
+        return;
     // Build the outer container the same way the text "newMessage" path does
     // (see TFTView_320x240::newMessage(uint32_t, lv_obj_t*, uint8_t, const char*)):
     // a full-width hiddenPanel that hosts a single chat-style inner row,
@@ -1966,9 +1983,8 @@ void TFTView_320x240::addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_
     lv_obj_t *info = lv_label_create(inner);
     lv_obj_align(info, LV_ALIGN_LEFT_MID, 34, 0);
     char buf[48];
-    snprintf(buf, sizeof(buf), "!%08x   %u.%us",
-             (unsigned)from,
-             (unsigned)(approx_duration_ms / 1000), (unsigned)((approx_duration_ms / 100) % 10));
+    snprintf(buf, sizeof(buf), "!%08x   %u.%us", (unsigned)from, (unsigned)(approx_duration_ms / 1000),
+             (unsigned)((approx_duration_ms / 100) % 10));
     lv_label_set_text(info, buf);
 
     voice_bubbles[message_id] = VoiceBubbleRefs{hiddenPanel, btn_label, info};
@@ -1978,7 +1994,8 @@ void TFTView_320x240::addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_
 void TFTView_320x240::updateVoiceBubbles(void)
 {
     IClientBase *client = controller ? controller->getClient() : nullptr;
-    if (!client) return;
+    if (!client)
+        return;
 
     // Discover new arrivals: peek every queued message and create a bubble for
     // ones we haven't seen yet. Each bubble is parented to the container of
@@ -1988,12 +2005,15 @@ void TFTView_320x240::updateVoiceBubbles(void)
     const size_t pending = client->voicePlayPendingCount();
     for (size_t i = 0; i < pending; i++) {
         uint32_t from = 0, to = 0, mid = 0, dur = 0;
-        uint8_t  ch = 0;
-        bool     played = false;
-        if (!client->voicePlayPeekFull(i, from, to, ch, mid, dur, played)) break;
-        if (voice_bubbles.find(mid) != voice_bubbles.end()) continue;
+        uint8_t ch = 0;
+        bool played = false;
+        if (!client->voicePlayPeekFull(i, from, to, ch, mid, dur, played))
+            break;
+        if (voice_bubbles.find(mid) != voice_bubbles.end())
+            continue;
         lv_obj_t *target = newMessageContainer(from, to, ch);
-        if (!target) continue;
+        if (!target)
+            continue;
         addVoiceBubble(target, from, mid, dur);
         if (played) {
             auto it = voice_bubbles.find(mid);
@@ -2009,18 +2029,19 @@ void TFTView_320x240::updateVoiceBubbles(void)
     for (auto &kv : voice_bubbles) {
         const uint32_t mid = kv.first;
         VoiceBubbleRefs &refs = kv.second;
-        if (!refs.btn_label || !refs.info_label) continue;
+        if (!refs.btn_label || !refs.info_label)
+            continue;
         if (playing && mid == playing_mid) {
             lv_label_set_text(refs.btn_label, LV_SYMBOL_STOP);
             const uint32_t elapsed = client->voicePlayElapsedMs();
-            const uint32_t total   = client->voicePlayTotalMs();
+            const uint32_t total = client->voicePlayTotalMs();
             char buf[48];
-            snprintf(buf, sizeof(buf), "!%08x   %u.%us / %u.%us",
-                     (unsigned)client->voicePlayFromNode(),
-                     (unsigned)(elapsed / 1000), (unsigned)((elapsed / 100) % 10),
-                     (unsigned)(total   / 1000), (unsigned)((total   / 100) % 10));
+            snprintf(buf, sizeof(buf), "!%08x   %u.%us / %u.%us", (unsigned)client->voicePlayFromNode(),
+                     (unsigned)(elapsed / 1000), (unsigned)((elapsed / 100) % 10), (unsigned)(total / 1000),
+                     (unsigned)((total / 100) % 10));
             lv_label_set_text(refs.info_label, buf);
-            if (refs.panel) lv_obj_set_style_opa(refs.panel, LV_OPA_COVER, LV_PART_MAIN);
+            if (refs.panel)
+                lv_obj_set_style_opa(refs.panel, LV_OPA_COVER, LV_PART_MAIN);
         } else {
             lv_label_set_text(refs.btn_label, LV_SYMBOL_PLAY);
         }
@@ -2030,9 +2051,11 @@ void TFTView_320x240::updateVoiceBubbles(void)
 void TFTView_320x240::vtPlayerBtnClickedCb(lv_event_t *e)
 {
     TFTView_320x240 *self = (TFTView_320x240 *)lv_event_get_user_data(e);
-    if (!self) return;
+    if (!self)
+        return;
     IClientBase *client = self->controller ? self->controller->getClient() : nullptr;
-    if (!client) return;
+    if (!client)
+        return;
     lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);
     const uint32_t mid = (uint32_t)(uintptr_t)(btn ? btn->user_data : nullptr);
     if (client->voicePlayIsPlaying()) {
@@ -4343,7 +4366,8 @@ void TFTView_320x240::ui_event_ok(lv_event_t *e)
                 THIS->controller->storeUIConfig(THIS->db.uiConfig);
                 // Re-apply M3 active fill to the current nav button after a
                 // theme swap (theme colours just changed).
-                if (THIS->activeButton) Themes::setMainButtonActive(THIS->activeButton, true);
+                if (THIS->activeButton)
+                    Themes::setMainButtonActive(THIS->activeButton, true);
             }
 
             lv_obj_add_flag(objects.settings_theme_panel, LV_OBJ_FLAG_HIDDEN);
