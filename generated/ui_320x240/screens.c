@@ -991,10 +991,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button0 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
@@ -1018,10 +1018,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button1 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
@@ -1045,10 +1045,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button2 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
@@ -1072,10 +1072,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button3 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
@@ -1099,10 +1099,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button4 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
@@ -1126,10 +1126,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button5 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
@@ -1153,10 +1153,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button6 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
@@ -1180,10 +1180,10 @@ void create_screen_main_screen() {
                     lv_obj_t *obj = lv_btn_create(parent_obj);
                     objects.channel_button7 = obj;
                     lv_obj_set_pos(obj, 122, 39);
-                    lv_obj_set_size(obj, LV_PCT(30), 24);
+                    lv_obj_set_size(obj, LV_PCT(95), 30);
                     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN);
                     lv_obj_clear_flag(obj, LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SNAPPABLE);
-                    add_style_channel_button_style(obj);
+                    add_style_settings_button_style(obj);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                     lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
                     {
