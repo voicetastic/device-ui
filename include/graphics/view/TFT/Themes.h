@@ -16,6 +16,10 @@ class Themes
     static void recolorButton(lv_obj_t *obj, bool enabled, lv_opa_t opa = 255);
     static void recolorImage(lv_obj_t *obj, bool enabled);
     static void recolorText(lv_obj_t *obj, bool enabled);
+    // Theme a popup/modal surface (bg/border/text) so it matches the rest of the
+    // UI instead of rendering on LVGL's default theme. Mirrors the
+    // surfaceContainerHigh popup look used elsewhere.
+    static void recolorContainer(lv_obj_t *obj);
     static void recolorTopLabel(lv_obj_t *obj, bool alert);
     static void recolorTableRow(lv_draw_fill_dsc_t *fill_draw_dsc, bool odd);
     // Apply M3 selected/unselected look to a top-nav button. Selected uses the

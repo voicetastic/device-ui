@@ -1854,6 +1854,7 @@ void TFTView_320x240::vtBitrateButtonCb(lv_event_t *e)
     lv_obj_t *panel = lv_obj_create(overlay);
     lv_obj_set_size(panel, 200, 215);
     lv_obj_center(panel);
+    Themes::recolorContainer(panel); // match the app theme, not LVGL's default
     lv_obj_set_style_pad_all(panel, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_flex_flow(panel, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(panel, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -1861,6 +1862,7 @@ void TFTView_320x240::vtBitrateButtonCb(lv_event_t *e)
 
     lv_obj_t *title = lv_label_create(panel);
     lv_label_set_text(title, _("Voice bitrate"));
+    Themes::recolorText(title, true); // themed onSurface text, readable on the panel
 
     for (uint8_t i = 0; i < 6; ++i) {
         lv_obj_t *btn = lv_btn_create(panel);
