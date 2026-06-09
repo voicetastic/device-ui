@@ -229,17 +229,16 @@ class TFTView_320x240 : public MeshtasticView
     // updates each existing bubble's play/stop glyph + time text based on
     // whether that bubble's message is currently playing.
     struct VoiceBubbleRefs {
-        lv_obj_t *panel;       // the chat-bubble container
-        lv_obj_t *btn_label;   // play/stop glyph inside the button
-        lv_obj_t *info_label;  // sender + duration / elapsed
+        lv_obj_t *panel;      // the chat-bubble container
+        lv_obj_t *btn_label;  // play/stop glyph inside the button
+        lv_obj_t *info_label; // sender + duration / elapsed
     };
     lv_timer_t *vt_player_timer = nullptr;
     std::map<uint32_t, VoiceBubbleRefs> voice_bubbles; // keyed by message_id
 
     void buildVoicePlayerTimer(void);
     void updateVoiceBubbles(void);
-    void addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_t message_id,
-                        uint32_t approx_duration_ms);
+    void addVoiceBubble(lv_obj_t *container, uint32_t from, uint32_t message_id, uint32_t approx_duration_ms);
     static void vtPlayerBtnClickedCb(lv_event_t *e);
     static void vtPlayerTimerCb(lv_timer_t *t);
 

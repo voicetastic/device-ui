@@ -44,7 +44,7 @@ If you like to check of how many tiles an area is composed of you can make use o
 If WiFi is enabled and an internet connection is present then map tiles that are not found on SD card are downloaded via the internet. The default map
 provider is Google Maps. However, you can provide your own map style URL by putting an .url file into the style folder. This file must contain a single line with the url template to download from. Once an .url file is found all successfully downloaded map tiles are also stored in the style same folder of the SD card.
 
-# Extra maps
+## Extra maps
 
 A small group of map tile enthusiasts (special thanks to @joyel24 & @teddy1602) like to share their downloaded tiles. In this section you'll find torrents for downloading complete sets of map tiles of various zoom levels.
 
@@ -69,14 +69,14 @@ Entire USA (all fifty states) standard OSM-style zoom 1 to 12, downloaded from O
 
 <br>
 
-# Compatibility
+## Compatibility
 
 - 🟢 **LILYGO T-Deck**: Confirmed to work
 - 🟢 **CrowPanel Advance HMI**: Confirmed to work on 2.4", 2.8", and 3.5" models
 - 🟡 **Seeed SenseCAP Indicator**: The MicroSD card slot is physically not connected with the ESP32-S3 where the MUI is running. It can not be used for showing maps in Meshtastic UI. However, when WiFi is enabled then map tiles are downloaded via the internet.
 - 🟡 **Heltec V4 Kit**: The current version does not have a MicroSD card slot and the available PSRAM is only 2 MB. When WiFi is enabled then map tiles are downloaded via the internet and converted into grayscale tiles to lower the memory consumption.
 
-# Credits and Attribution
+## Credits and Attribution
 
 Attribution to Thunderforest, Geoapify, and OpenStreetMap for providing the tile API services:
 _<br>atlas, outdoors styles © https://www.thunderforest.com/terms - Creative Commons licence CC-BY-SA 2.0_
