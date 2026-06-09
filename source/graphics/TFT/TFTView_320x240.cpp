@@ -716,6 +716,15 @@ void TFTView_320x240::updateTheme(void)
     lv_obj_set_style_bg_img_recolor_opa(objects.map_button, opa, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_img_recolor_opa(objects.settings_button, opa, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    // Top-bar logo: recolor solid white on the dark theme so it stays legible
+    // on the near-black top panel; keep its original colours on the light theme.
+    if (Themes::get() == Themes::eDark) {
+        lv_obj_set_style_image_recolor(objects.meshtastic_image, lv_color_hex(0xffffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_image_recolor_opa(objects.meshtastic_image, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    } else {
+        lv_obj_set_style_image_recolor_opa(objects.meshtastic_image, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+
     for (int i = 0; i < c_max_channels; i++) {
         if (db.channel[i].role != meshtastic_Channel_Role_DISABLED)
             updateGroupChannel(i);
